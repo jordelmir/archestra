@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.33](https://github.com/archestra-ai/archestra/compare/platform-v1.2.32...platform-v1.2.33) (2026-05-05)
+
+
+### Features
+
+* A2AManager, A2A JSON-RPC v2, ChatOps approval flow ([#3981](https://github.com/archestra-ai/archestra/issues/3981)) ([9c4de1d](https://github.com/archestra-ai/archestra/commit/9c4de1d44d834f8cfd264243439a8a7eceb7533d))
+* add LLM proxy OAuth and simplify virtual keys ([#4327](https://github.com/archestra-ai/archestra/issues/4327)) ([7ac0f3c](https://github.com/archestra-ai/archestra/commit/7ac0f3c6a93d7f815c9c38d9d232bdcd09659a51))
+
+
+### Bug Fixes
+
+* adjust custom logo alignment ([#4339](https://github.com/archestra-ai/archestra/issues/4339)) ([70584b3](https://github.com/archestra-ai/archestra/commit/70584b3b1a9371dd18c9cff5883d7cebb863eaac))
+* clarify run_tool arguments in search results ([#4271](https://github.com/archestra-ai/archestra/issues/4271)) ([3e344f7](https://github.com/archestra-ai/archestra/commit/3e344f733886c5c3696bd1b35ec67c4ebe7377f3))
+
 ## [1.2.32](https://github.com/archestra-ai/archestra/compare/platform-v1.2.31...platform-v1.2.32) (2026-05-04)
 
 
