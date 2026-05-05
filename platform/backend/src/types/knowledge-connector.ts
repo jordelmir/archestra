@@ -17,6 +17,7 @@ const ASANA = z.literal("asana");
 const OUTLINE = z.literal("outline");
 const LINEAR = z.literal("linear");
 const SALESFORCE = z.literal("salesforce");
+const ZENDESK = z.literal("zendesk");
 
 export const ConnectorTypeSchema = z.union([
   JIRA,
@@ -33,6 +34,7 @@ export const ConnectorTypeSchema = z.union([
   LINEAR,
   OUTLINE,
   SALESFORCE,
+  ZENDESK,
 ]);
 export type ConnectorType = z.infer<typeof ConnectorTypeSchema>;
 
@@ -283,6 +285,26 @@ export const LinearCheckpointSchema = z.object({
 });
 export type LinearCheckpoint = z.infer<typeof LinearCheckpointSchema>;
 
+// ===== Zendesk Config & Checkpoint =====
+
+export const ZendeskConfigSchema = z.object({
+  type: ZENDESK,
+  zendeskUrl: connectorUrlSchema,
+  ticketStatuses: z.array(z.string()).optional(),
+  tagsToSkip: z.array(z.string()).optional(),
+  includeHelpCenterArticles: z.boolean().optional(),
+  batchSize: z.number().optional(),
+});
+export type ZendeskConfig = z.infer<typeof ZendeskConfigSchema>;
+
+export const ZendeskCheckpointSchema = z.object({
+  type: ZENDESK,
+  lastSyncedAt: z.string().optional(),
+  lastCursor: z.string().optional(),
+  articlesStartTime: z.number().optional(),
+});
+export type ZendeskCheckpoint = z.infer<typeof ZendeskCheckpointSchema>;
+
 // ===== Salesforce Config & Checkpoint =====
 
 export const SalesforceConfigSchema = z.object({
@@ -398,6 +420,7 @@ export const ConnectorConfigSchema = z.discriminatedUnion("type", [
   LinearConfigSchema,
   OutlineConfigSchema,
   SalesforceConfigSchema,
+  ZendeskConfigSchema,
 ]);
 export type ConnectorConfig = z.infer<typeof ConnectorConfigSchema>;
 
@@ -416,6 +439,7 @@ export const ConnectorCheckpointSchema = z.discriminatedUnion("type", [
   LinearCheckpointSchema,
   OutlineCheckpointSchema,
   SalesforceCheckpointSchema,
+  ZendeskCheckpointSchema,
 ]);
 export type ConnectorCheckpoint = z.infer<typeof ConnectorCheckpointSchema>;
 

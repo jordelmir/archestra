@@ -32,6 +32,7 @@ import { OutlineConfigFields } from "./outline-config-fields";
 import { SalesforceConfigFields } from "./salesforce-config-fields";
 import { ServiceNowConfigFields } from "./servicenow-config-fields";
 import { SharePointConfigFields } from "./sharepoint-config-fields";
+import { ZendeskConfigFields } from "./zendesk-config-fields";
 
 export type ConnectorType =
   archestraApiTypes.CreateConnectorData["body"]["connectorType"];
@@ -78,6 +79,7 @@ const CONNECTOR_DISPLAY_LABELS: Record<ConnectorType, string> = {
   outline: CONNECTOR_TYPE_LABELS.outline,
   onedrive: CONNECTOR_TYPE_LABELS.onedrive ?? "OneDrive",
   salesforce: CONNECTOR_TYPE_LABELS.salesforce ?? "Salesforce",
+  zendesk: CONNECTOR_TYPE_LABELS.zendesk ?? "Zendesk",
 };
 
 export const CONNECTOR_OPTIONS: ConnectorOption[] = [
@@ -151,6 +153,11 @@ export const CONNECTOR_OPTIONS: ConnectorOption[] = [
     label: CONNECTOR_DISPLAY_LABELS.salesforce,
     description: "Sync CRM objects from Salesforce",
   },
+  {
+    type: "zendesk",
+    label: CONNECTOR_DISPLAY_LABELS.zendesk,
+    description: "Sync tickets and articles from Zendesk",
+  },
 ];
 
 const CONNECTOR_URL_CONFIGS: Record<ConnectorType, ConnectorUrlConfig | null> =
@@ -217,6 +224,12 @@ const CONNECTOR_URL_CONFIGS: Record<ConnectorType, ConnectorUrlConfig | null> =
       description:
         "Use https://login.salesforce.com for production and https://test.salesforce.com for sandbox.",
     },
+    zendesk: {
+      fieldName: "config.zendeskUrl",
+      label: "Zendesk URL",
+      placeholder: "https://your-domain.zendesk.com",
+      description: "Your Zendesk instance URL.",
+    },
   };
 
 const CREATE_ADVANCED_CONFIG_FIELDS: Record<
@@ -239,6 +252,7 @@ const CREATE_ADVANCED_CONFIG_FIELDS: Record<
   onedrive: ({ form }) => <OneDriveConfigFields form={form} />,
   outline: ({ form }) => <OutlineConfigFields form={form} />,
   salesforce: ({ form }) => <SalesforceConfigFields form={form} />,
+  zendesk: ({ form }) => <ZendeskConfigFields form={form} hideUrl />,
 };
 
 const EDIT_ADVANCED_CONFIG_FIELDS: Record<
@@ -305,13 +319,19 @@ export function getDefaultConnectorConfig(
     onedrive: { type, userIds: "", recursive: true },
     outline: { type, outlineUrl: "https://app.getoutline.com" },
     salesforce: { type, loginUrl: "https://login.salesforce.com" },
+    zendesk: { type },
   };
 
   return { ...defaultConfigs[type] };
 }
 
 export function connectorNeedsEmail(type: ConnectorType): boolean {
-  return type === "jira" || type === "confluence" || type === "salesforce";
+  return (
+    type === "jira" ||
+    type === "confluence" ||
+    type === "salesforce" ||
+    type === "zendesk"
+  );
 }
 
 export function getConnectorCredentialConfig(params: {
@@ -344,6 +364,7 @@ export function getConnectorCredentialConfig(params: {
     asana: "Personal Access Token",
     onedrive: "Client Secret",
     salesforce: "Password + Security Token",
+    zendesk: "API Token",
   };
 
   const createApiTokenPlaceholders: Record<ConnectorType, string> = {
@@ -361,6 +382,7 @@ export function getConnectorCredentialConfig(params: {
     asana: "Your personal access token",
     onedrive: "Your Azure AD client secret",
     salesforce: "Your Salesforce password followed by your security token",
+    zendesk: "Your Zendesk API token",
   };
 
   const editApiTokenPlaceholders: Record<ConnectorType, string> = {
@@ -378,6 +400,7 @@ export function getConnectorCredentialConfig(params: {
     linear: "Leave empty to keep existing token",
     asana: "Leave empty to keep existing token",
     onedrive: "Leave empty to keep existing token",
+    zendesk: "Leave empty to keep existing token",
   };
 
   const apiTokenRequiredMessages: Record<ConnectorType, string> = {
@@ -395,6 +418,7 @@ export function getConnectorCredentialConfig(params: {
     asana: "Personal access token is required",
     onedrive: "Client secret is required",
     salesforce: "Password and security token are required",
+    zendesk: "API token is required",
   };
 
   const apiTokenHelpText = getApiTokenHelpText({
@@ -469,6 +493,15 @@ function getApiTokenHelpText(params: {
         Your Outline API key. Create one under{" "}
         <strong>Settings &rarr; API &amp; Apps</strong>. Keys start with{" "}
         <code>ol_api_</code>.
+      </p>
+    );
+  }
+
+  if (params.type === "zendesk") {
+    return (
+      <p className="text-[0.8rem] text-muted-foreground">
+        Your Zendesk API token. Generate one in Admin Center &gt; Apps and
+        integrations &gt; Zendesk API.
       </p>
     );
   }
@@ -872,6 +905,41 @@ const INLINE_CONFIG_FIELDS: Record<
           {mode === "edit" && (
             <FormDescription>
               Leave empty to keep existing credentials unchanged.
+            </FormDescription>
+          )}
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  ),
+  zendesk: ({ form, mode }) => (
+    <FormField
+      control={form.control}
+      name="email"
+      rules={mode === "create" ? { required: "Email is required" } : undefined}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>Email{mode === "edit" && " (optional)"}</FormLabel>
+          <FormControl>
+            <Input
+              type="email"
+              placeholder={
+                mode === "create"
+                  ? "user@example.com"
+                  : "Leave empty to keep existing credentials"
+              }
+              {...field}
+            />
+          </FormControl>
+          {mode === "edit" && (
+            <FormDescription>
+              Leave empty to keep existing credentials unchanged.
+            </FormDescription>
+          )}
+          {mode === "create" && (
+            <FormDescription>
+              Your Zendesk agent email address (used as email/token for basic
+              auth).
             </FormDescription>
           )}
           <FormMessage />

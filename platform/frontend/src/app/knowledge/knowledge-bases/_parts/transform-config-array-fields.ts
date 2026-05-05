@@ -22,6 +22,7 @@ export function transformConfigArrayFields(
     "tagsToSkip",
     "objects",
     "collectionIds",
+    "ticketStatuses",
   ];
   for (const key of stringArrayFields) {
     if (typeof result[key] === "string") {

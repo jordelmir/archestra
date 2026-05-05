@@ -27,6 +27,7 @@ const CONNECTOR_ICON_MAP: Partial<Record<ConnectorType, ConnectorIcon>> = {
   asana: { kind: "img", src: "/icons/asana.png" },
   salesforce: { kind: "img", src: "/icons/salesforce.png" },
   outline: { kind: "img", src: "/icons/getoutline.png" },
+  zendesk: { kind: "img", src: "/icons/zendesk.svg" },
 };
 
 export function hasConnectorIcon(type: string): boolean {

@@ -13,6 +13,7 @@ import { OutlineConnector } from "./outline/outline-connector";
 import { SalesforceConnector } from "./salesforce/salesforce-connector";
 import { ServiceNowConnector } from "./servicenow/servicenow-connector";
 import { SharePointConnector } from "./sharepoint/sharepoint-connector";
+import { ZendeskConnector } from "./zendesk/zendesk-connector";
 
 const connectorRegistry: Record<ConnectorType, () => Connector> = {
   jira: () => new JiraConnector(),
@@ -29,6 +30,7 @@ const connectorRegistry: Record<ConnectorType, () => Connector> = {
   asana: () => new AsanaConnector(),
   linear: () => new LinearConnector(),
   salesforce: () => new SalesforceConnector(),
+  zendesk: () => new ZendeskConnector(),
 };
 
 export function getConnector(type: string): Connector {

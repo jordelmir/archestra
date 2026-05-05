@@ -48,6 +48,7 @@ export const CONNECTOR_TYPE_LABELS: Record<string, string> = {
   linear: "Linear",
   outline: "Outline",
   salesforce: "Salesforce",
+  zendesk: "Zendesk",
 };
 
 const CONNECTOR_PLACEHOLDER_DEPARTMENTS = [
