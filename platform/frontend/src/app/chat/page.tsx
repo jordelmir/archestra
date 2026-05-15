@@ -99,12 +99,6 @@ import {
 } from "@/lib/chat/chat.query";
 import { useChatAgentState } from "@/lib/chat/chat-agent-state.hook";
 import {
-  getMessageText,
-  getObjectMetadata,
-  hasCreatedAtMetadata,
-  messagesHaveSameRenderableContent,
-} from "./message-merging-utils";
-import {
   useConversationShare,
   useForkSharedConversation,
 } from "@/lib/chat/chat-share.query";
@@ -145,6 +139,7 @@ import {
   resolvePreferredModelForProvider,
   shouldResetInitialChatState,
 } from "./chat-initial-state";
+import { mergePersistedMessageMetadata } from "./message-merging-utils";
 import ArchestraPromptInput from "./prompt-input";
 import { resolveSharedConversationForkState } from "./shared-conversation-fork";
 
@@ -2107,44 +2102,6 @@ export function ChatPageContent({
 
 export default function ChatPage() {
   return <ChatPageContent key="new-chat" />;
-}
-
-function mergePersistedMessageMetadata(params: {
-  liveMessages: UIMessage[];
-  persistedMessages: UIMessage[];
-}): UIMessage[] {
-  const remainingPersistedMessages = [...params.persistedMessages];
-
-  return params.liveMessages.map((liveMessage) => {
-    if (hasCreatedAtMetadata(liveMessage)) {
-      return liveMessage;
-    }
-
-    const persistedIndex = remainingPersistedMessages.findIndex(
-      (persistedMessage) =>
-        messagesHaveSameRenderableContent({
-          liveMessage,
-          persistedMessage,
-        }),
-    );
-
-    if (persistedIndex === -1) {
-      return liveMessage;
-    }
-
-    const [persistedMessage] = remainingPersistedMessages.splice(
-      persistedIndex,
-      1,
-    );
-
-    return {
-      ...liveMessage,
-      metadata: {
-        ...getObjectMetadata(persistedMessage),
-        ...getObjectMetadata(liveMessage),
-      },
-    };
-  });
 }
 
 // =========================================================================
