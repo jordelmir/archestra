@@ -1,5 +1,5 @@
 import type { UIMessage } from "@ai-sdk/react";
-import { type PartialUIMessage } from "@shared";
+import type { PartialUIMessage } from "@shared";
 
 /**
  * A permissive type for message merging that accounts for different AI SDK versions
@@ -10,6 +10,19 @@ export type MergableUIMessage = PartialUIMessage & {
   content?: string;
   experimental_attachments?: unknown[];
 };
+
+type MessagePart = {
+  type?: string;
+  text?: string;
+  toolName?: string;
+  toolInvocation?: {
+    toolName?: string;
+  };
+};
+
+function getMessageParts(message: MergableUIMessage): MessagePart[] {
+  return Array.isArray(message.parts) ? (message.parts as MessagePart[]) : [];
+}
 
 /**
  * Determines if two message objects refer to the same logical interaction.
@@ -41,12 +54,10 @@ export function messagesHaveSameRenderableContent(params: {
 
   // 4. Attachment Check
   const getAttachmentCount = (msg: MergableUIMessage) => {
-    let count = (msg.experimental_attachments?.length as number) || 0;
-    if (msg.parts) {
-      count += msg.parts.filter(
-        (p: any) => p.type === "image" || p.type === "file",
-      ).length;
-    }
+    let count = msg.experimental_attachments?.length || 0;
+    count += getMessageParts(msg).filter(
+      (part) => part.type === "image" || part.type === "file",
+    ).length;
     return count;
   };
   if (getAttachmentCount(lm) !== getAttachmentCount(pm)) {
@@ -56,12 +67,11 @@ export function messagesHaveSameRenderableContent(params: {
   // 5. Tool Call Signature Verification
   const getToolNames = (msg: MergableUIMessage) => {
     const names: string[] = [];
-    if (msg.parts) {
-      for (const part of msg.parts) {
-        const p = part as any;
-        if (p.type === "tool-call" || p.type === "tool-invocation") {
-          const toolName = p.toolName || p.toolInvocation?.toolName;
-          if (toolName) names.push(toolName);
+    for (const part of getMessageParts(msg)) {
+      if (part.type === "tool-call" || part.type === "tool-invocation") {
+        const toolName = part.toolName || part.toolInvocation?.toolName;
+        if (toolName) {
+          names.push(toolName);
         }
       }
     }
@@ -85,23 +95,82 @@ export function messagesHaveSameRenderableContent(params: {
   return liveTools.every((name, i) => name === persistedTools[i]);
 }
 
-export function getMessageText(message: any) {
+export function mergePersistedMessageMetadata(params: {
+  liveMessages: UIMessage[];
+  persistedMessages: UIMessage[];
+}): UIMessage[] {
+  const remainingPersistedMessages = params.persistedMessages.map(
+    (message, originalIndex) => ({ message, originalIndex }),
+  );
+  let lastMatchedPersistedIndex = -1;
+
+  const mergedMessages = params.liveMessages.map((liveMessage) => {
+    if (hasCreatedAtMetadata(liveMessage)) {
+      return liveMessage;
+    }
+
+    const persistedIndex = remainingPersistedMessages.findIndex(
+      ({ message: persistedMessage }) =>
+        messagesHaveSameRenderableContent({
+          liveMessage,
+          persistedMessage,
+        }),
+    );
+
+    if (persistedIndex === -1) {
+      return liveMessage;
+    }
+
+    const [persistedEntry] = remainingPersistedMessages.splice(
+      persistedIndex,
+      1,
+    );
+    lastMatchedPersistedIndex = Math.max(
+      lastMatchedPersistedIndex,
+      persistedEntry.originalIndex,
+    );
+
+    return {
+      ...liveMessage,
+      metadata: {
+        ...getObjectMetadata(persistedEntry.message),
+        ...getObjectMetadata(liveMessage),
+      },
+    };
+  });
+
+  const shouldRecoverPersistedTail =
+    mergedMessages.length === 0 ||
+    (lastMatchedPersistedIndex >= 0 && mergedMessages.at(-1)?.role === "user");
+
+  if (!shouldRecoverPersistedTail) {
+    return mergedMessages;
+  }
+
+  return [
+    ...mergedMessages,
+    ...params.persistedMessages.slice(lastMatchedPersistedIndex + 1),
+  ];
+}
+
+export function getMessageText(message: unknown) {
   const msg = message as MergableUIMessage;
-  if (msg.parts) {
-    return msg.parts
-      .map((part: any) => (part.type === "text" ? part.text || "" : ""))
+  const parts = getMessageParts(msg);
+  if (parts.length > 0) {
+    return parts
+      .map((part) => (part.type === "text" ? part.text || "" : ""))
       .filter(Boolean)
       .join("\n");
   }
   return typeof msg.content === "string" ? msg.content : "";
 }
 
-export function hasCreatedAtMetadata(message: any) {
+export function hasCreatedAtMetadata(message: unknown) {
   const metadata = getObjectMetadata(message);
   return typeof metadata.createdAt === "string";
 }
 
-export function getObjectMetadata(message: any): Record<string, unknown> {
+export function getObjectMetadata(message: unknown): Record<string, unknown> {
   const msg = message as MergableUIMessage;
   return typeof msg.metadata === "object" && msg.metadata !== null
     ? { ...(msg.metadata as Record<string, unknown>) }
